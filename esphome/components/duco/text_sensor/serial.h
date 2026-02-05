@@ -16,6 +16,12 @@ class DucoSerial : public DucoDevice, public PollingComponent, public text_senso
   float get_setup_priority() const override;
 
   void receive_response(const DucoMessage &message) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+
 };
 
 }  // namespace duco
