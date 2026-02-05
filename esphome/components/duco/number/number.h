@@ -18,6 +18,11 @@ class DucoComfortTemperature : public DucoDevice, public PollingComponent, publi
   void receive_response(const DucoMessage &message) override;
 
   void control(float number) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
 };
 
 }  // namespace duco

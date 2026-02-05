@@ -7,12 +7,14 @@ namespace duco {
 
 static const char *const TAG = "duco number";
 
+void DucoComfortTemperature::set_address(uint8_t address) { ESP_LOGD(TAG, "ComfortTemperature: SetAddress %i",address); this->address_ = address; }
+
 void DucoComfortTemperature::setup() {}
 
 void DucoComfortTemperature::update() {
   DucoMessage message;
   message.function = 0x24;
-  message.data = {0x00, 0x12, 0x0a};
+  message.data = {0x00, address_, 0x0a};
   this->parent_->send(message, this);
 }
 
@@ -37,7 +39,7 @@ void DucoComfortTemperature::control(float number) {
 
   DucoMessage message;
   message.function = 0x24;
-  message.data = {0x01, 0x12, 0x0a, temperature, 0x00, 0x00, 0x00};
+  message.data = {0x01, address_, 0x0a, temperature, 0x00, 0x00, 0x00};
   this->parent_->send(message, this);
 }
 
