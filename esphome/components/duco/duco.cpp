@@ -171,6 +171,11 @@ void Duco::debug_hex_(std::vector<uint8_t> bytes, uint8_t separator) {
   delay(10);
 }
 
+bool Duco::isValidString(const std::string& str) {
+    return !str.empty() &&
+           std::all_of(str.begin(), str.end(), ::isprint);
+}
+
 const std::string DucoDiscovery::NODE_TYPE_UCBAT = "UCBAT";
 const std::string DucoDiscovery::NODE_TYPE_UC = "UC";
 const std::string DucoDiscovery::NODE_TYPE_UCRH = "UCRH";

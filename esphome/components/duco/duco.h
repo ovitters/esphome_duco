@@ -8,6 +8,11 @@
 #include <vector>
 #include <map>
 
+// isValidString
+#include <iostream>
+#include <algorithm>
+#include <cctype>
+
 #ifdef USE_TIME
 #include "esphome/components/time/real_time_clock.h"
 #include "esphome/core/time.h"
@@ -89,6 +94,8 @@ class Duco : public uart::UARTDevice, public Component {
 
   std::map<uint8_t, DucoDevice *> waiting_for_response;
   void stop_waiting(uint8_t message_id);
+
+  bool isValidString(const std::string& str);
 
  protected:
   uint8_t last_id_ = 0;
