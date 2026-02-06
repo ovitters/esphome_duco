@@ -52,23 +52,6 @@ const uint8_t DucoBypassControl::BYPASS_CODE_CLOSED = 0x02;
 const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON = 0x01;
 const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_OFF = 0x00;
 
-
-void DucoSelect::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoSelect: SetAddress %i",address); this->address_ = address; }
-
-void DucoSelect::setup() {}
-
-void DucoSelect::update() {
-  DucoMessage message;
-  message.function = 0x0c;
-  message.data = {0x02, address_};
-  this->parent_->send(message, this);
-}
-
-float DucoSelect::get_setup_priority() const {
-  // After DUCO
-  return setup_priority::BUS - 2.0f;
-}
-
 std::string code_to_string(uint8_t mode) {
   switch (mode) {
     case 0x00:  // Both BYPASS_CODE_AUTO and MODE_CODE_AUTO are 0x00
@@ -201,8 +184,23 @@ uint8_t string_to_code_bypass_adaptive(const std::string &mode) {
 }
 
 
+void DucoSelect::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoSelect: SetAddress %i",address); this->address_ = address; }
 
+void DucoSelect::setup() {
+  ESP_LOGD(TAG, "DucoSelect: setup!");
+}
 
+void DucoSelect::update() {
+  DucoMessage message;
+  message.function = 0x0c;
+  message.data = {0x02, address_};
+  this->parent_->send(message, this);
+}
+
+float DucoSelect::get_setup_priority() const {
+  // After DUCO
+  return setup_priority::BUS - 2.0f;
+}
 
 void DucoSelect::receive_response(const DucoMessage &message) {
   if (message.function == 0x0e && message.data[0] != 0x01) {
@@ -230,18 +228,14 @@ void DucoSelect::control(const std::string &value) {
 
 void DucoBypassControl::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoBypassControl: SetAddress %i",address); this->address_ = address; }
 
-void DucoBypassControl::setup() {}
+void DucoBypassControl::setup() {
+  ESP_LOGD(TAG, "DucoBypassControl: setup!");
+}
 
 void DucoBypassControl::update() {
-  if (!this->parent_->is_advanced_features_enabled()) {
-    ESP_LOGW(TAG, "DucoBypassAdaptiveControl: Advanced features disabled, control rejected!");
-    // Publish the current state again to revert the GUI change
-    this->publish_state(this->state);
-    return;
-  }
   DucoMessage message;
   message.function = 0x24;
-  message.data = {0x05, 0x00, 0x10, 0x0a};
+  message.data = {0x00, 0x10, 0x0a};
   this->parent_->send(message, this);
 }
 
@@ -268,17 +262,6 @@ void DucoBypassControl::receive_response(const DucoMessage &message) {
 }
 
 void DucoBypassControl::control(const std::string &value) {
-  DucoMessage message;
-  message.function = 0x24;
-  message.data = {address_,0x10, 0x0a, string_to_code_bypass(value), 0x00, 0x00, 0x00};
-  this->parent_->send(message, this);
-}
-
-void DucoBypassAdaptiveControl::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoBypassAdaptiveControl: SetAddress %i",address); this->address_ = address; }
-
-void DucoBypassAdaptiveControl::setup() {}
-
-void DucoBypassAdaptiveControl::update() {
   if (!this->parent_->is_advanced_features_enabled()) {
     ESP_LOGW(TAG, "DucoBypassAdaptiveControl: Advanced features disabled, control rejected!");
     // Publish the current state again to revert the GUI change
@@ -287,7 +270,20 @@ void DucoBypassAdaptiveControl::update() {
   }
   DucoMessage message;
   message.function = 0x24;
-  message.data = {0x05, 0x00, 0x11, 0x0a};
+  message.data = {address_, 0x10, 0x0a, string_to_code_bypass(value), 0x00, 0x00, 0x00};
+  this->parent_->send(message, this);
+}
+
+void DucoBypassAdaptiveControl::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoBypassAdaptiveControl: SetAddress %i",address); this->address_ = address; }
+
+void DucoBypassAdaptiveControl::setup() {
+  ESP_LOGD(TAG, "DucoBypassAdaptiveControl: setup!");
+}
+
+void DucoBypassAdaptiveControl::update() {
+  DucoMessage message;
+  message.function = 0x24;
+  message.data = {0x00, 0x11, 0x0a};
   this->parent_->send(message, this);
 }
 
@@ -315,6 +311,12 @@ void DucoBypassAdaptiveControl::receive_response(const DucoMessage &message) {
 }
 
 void DucoBypassAdaptiveControl::control(const std::string &value) {
+  if (!this->parent_->is_advanced_features_enabled()) {
+    ESP_LOGW(TAG, "DucoBypassAdaptiveControl: Advanced features disabled, control rejected!");
+    // Publish the current state again to revert the GUI change
+    this->publish_state(this->state);
+    return;
+  }
   DucoMessage message;
   message.function = 0x24;
   message.data = {address_,0x11, 0x0a, string_to_code_bypass_adaptive(value), 0x00, 0x00, 0x00};
