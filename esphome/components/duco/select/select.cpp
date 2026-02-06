@@ -29,6 +29,8 @@ const std::string DucoBypassControl::BYPASS_CLOSED = "CLOSED";
 const std::string DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_ON = "ON";
 const std::string DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_OFF = "OFF";
 
+const std::string DucoHeaterMode::HEATER_ON  = "ON";
+const std::string DucoHeaterMode::HEATER_OFF  = "OFF";
 
 const uint8_t DucoSelect::MODE_CODE_AUTO = 0x00;
 const uint8_t DucoSelect::MODE_CODE_MAN1 = 0x04;
@@ -46,11 +48,15 @@ const uint8_t DucoSelect::MODE_CODE_MAN2X3 = 0xc5;
 const uint8_t DucoSelect::MODE_CODE_MAN3X3 = 0xc6;
 
 const uint8_t DucoBypassControl::BYPASS_CODE_AUTO = 0x00;
-const uint8_t DucoBypassControl::BYPASS_CODE_OPEN = 0x01;
-const uint8_t DucoBypassControl::BYPASS_CODE_CLOSED = 0x02;
+const uint8_t DucoBypassControl::BYPASS_CODE_OPEN = 0x02;
+const uint8_t DucoBypassControl::BYPASS_CODE_CLOSED = 0x01;
 
 const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON = 0x01;
 const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_OFF = 0x00;
+
+const uint8_t DucoHeaterMode::HEATER_CODE_ON = 0x01;
+const uint8_t DucoHeaterMode::HEATER_CODE_OFF = 0x00;
+
 
 std::string code_to_string(uint8_t mode) {
   switch (mode) {
@@ -163,7 +169,7 @@ uint8_t string_to_code_bypass(const std::string &mode) {
 
 std::string code_to_string_bypass_adaptive(uint8_t mode) {
   switch (mode) {
-    case DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON:  // Both BYPASS_CODE_AUTO and MODE_CODE_AUTO are 0x00
+    case DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON:
       return DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_ON;
     case DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_OFF:
       return DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_OFF;
@@ -182,6 +188,29 @@ uint8_t string_to_code_bypass_adaptive(const std::string &mode) {
   }
   return DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON;
 }
+
+std::string code_to_string_heater(uint8_t mode) {
+  switch (mode) {
+    case DucoHeaterMode::HEATER_CODE_ON:
+      return DucoHeaterMode::HEATER_ON;
+    case DucoHeaterMode::HEATER_CODE_OFF:
+      return DucoHeaterMode::HEATER_OFF;
+    default:
+      return DucoHeaterMode::HEATER_OFF;
+  }
+  return DucoHeaterMode::HEATER_OFF;
+}
+
+uint8_t string_to_code_heater(const std::string &mode) {
+  if (mode == DucoHeaterMode::HEATER_ON) {
+    return DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON;
+  }
+  if (mode == DucoHeaterMode::HEATER_OFF) {
+    return DucoHeaterMode::HEATER_CODE_OFF;
+  }
+  return DucoHeaterMode::HEATER_CODE_OFF;
+}
+
 
 
 void DucoSelect::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoSelect: SetAddress %i",address); this->address_ = address; }
@@ -323,6 +352,52 @@ void DucoBypassAdaptiveControl::control(const std::string &value) {
   this->parent_->send(message, this);
 }
 
+void DucoHeaterMode::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoBypassAdaptiveControl: SetAddress %i",address); this->address_ = address; }
+
+void DucoHeaterMode::setup() {}
+
+void DucoHeaterMode::update() {
+  DucoMessage message;
+  message.function = 0x24;
+  message.data = {0x00, 0x20, 0x0a};
+  this->parent_->send(message, this);
+}
+
+float DucoHeaterMode::get_setup_priority() const {
+  // After DUCO
+  return setup_priority::BUS - 2.0f;
+}
+
+
+void DucoHeaterMode::receive_response(const DucoMessage &message) {
+  if (message.function == 0x26 && message.data[0] == 0x01 && message.data[1] == 0x20 && message.data[2] == 0x0a) {
+    // mode response received, parse it
+    auto mode = code_to_string_bypass_adaptive(message.data[3]);
+
+    publish_state(mode);
+
+    ESP_LOGD(TAG, "DucoHeaterMode: Current mode: %s", mode.c_str());
+
+    // do not wait for new messages with the same ID
+    this->parent_->stop_waiting(message.id);
+  }
+  if (message.function == 0x26 && message.data[0] == 0x01) {
+    this->parent_->stop_waiting(message.id);
+  }
+}
+
+void DucoHeaterMode::control(const std::string &value) {
+  if (!this->parent_->is_advanced_features_enabled()) {
+    ESP_LOGW(TAG, "DucoHeaterMode: Advanced features disabled, control rejected!");
+    // Publish the current state again to revert the GUI change
+    this->publish_state(this->state);
+    return;
+  }
+  DucoMessage message;
+  message.function = 0x24;
+  message.data = {address_,0x20, 0x0a, string_to_code_bypass_adaptive(value), 0x00, 0x00, 0x00};
+  this->parent_->send(message, this);
+}
 
 }  // namespace duco
 }  // namespace esphome

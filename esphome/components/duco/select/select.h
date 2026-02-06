@@ -102,6 +102,30 @@ class DucoBypassAdaptiveControl : public DucoDevice, public PollingComponent, pu
   uint8_t address_;
 };
 
+class DucoHeaterMode : public DucoDevice, public PollingComponent, public select::Select {
+ public:
+  static const std::string HEATER_ON;
+  static const std::string HEATER_OFF;
+
+  static const uint8_t HEATER_CODE_ON;
+  static const uint8_t HEATER_CODE_OFF;
+
+  void setup() override;
+  void update() override;
+
+  float get_setup_priority() const override;
+
+  void receive_response(const DucoMessage &message) override;
+
+  void control(const std::string &value) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+};
+
+
 
 }  // namespace duco
 }  // namespace esphome
