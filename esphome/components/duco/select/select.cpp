@@ -49,8 +49,8 @@ const uint8_t DucoBypassControl::BYPASS_CODE_AUTO = 0x00;
 const uint8_t DucoBypassControl::BYPASS_CODE_OPEN = 0x01;
 const uint8_t DucoBypassControl::BYPASS_CODE_CLOSED = 0x02;
 
-const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON = 0x00;
-const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_OFF = 0x01;
+const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_ON = 0x01;
+const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_OFF = 0x00;
 
 
 void DucoSelect::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoSelect: SetAddress %i",address); this->address_ = address; }
