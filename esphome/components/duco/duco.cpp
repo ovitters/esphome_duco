@@ -176,6 +176,7 @@ bool Duco::isValidString(const std::string& str) {
            std::all_of(str.begin(), str.end(), ::isprint);
 }
 
+
 const std::string DucoDiscovery::NODE_TYPE_UCBAT = "UCBAT";
 const std::string DucoDiscovery::NODE_TYPE_UC = "UC";
 const std::string DucoDiscovery::NODE_TYPE_UCRH = "UCRH";

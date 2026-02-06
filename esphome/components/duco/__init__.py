@@ -24,6 +24,7 @@ MULTI_CONF = True
 
 CONF_DUCO_ID = "duco_id"
 CONF_SEND_WAIT_TIME = "send_wait_time"
+CONF_ENABLE_ADVANCED_FEATURES = "enable_advanced_features"
 
 # A schema for components like sensors
 DUCO_COMPONENT_SCHEMA = cv.Schema({cv.GenerateID(CONF_DUCO_ID): cv.use_id(Duco)})
@@ -59,6 +60,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_DISABLE_CRC, default=False): cv.boolean,
             cv.Optional(CONF_DISCOVERY): DISCOVERY_SCHEMA,
             cv.Optional(CONF_TIME): TIME_SCHEMA,
+            cv.Optional(CONF_ENABLE_ADVANCED_FEATURES, default=False): cv.boolean,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -75,6 +77,7 @@ async def to_code(config):
 
     cg.add(var.set_send_wait_time(config[CONF_SEND_WAIT_TIME]))
     cg.add(var.set_disable_crc(config[CONF_DISABLE_CRC]))
+    cg.add(var.set_advanced_features_enabled(config[CONF_ENABLE_ADVANCED_FEATURES]))
 
     if CONF_TIME in config:
         time_config = config[CONF_TIME]

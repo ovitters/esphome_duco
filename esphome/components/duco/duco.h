@@ -97,6 +97,9 @@ class Duco : public uart::UARTDevice, public Component {
 
   bool isValidString(const std::string& str);
 
+  void set_advanced_features_enabled(bool enabled) { this->advanced_features_enabled_ = enabled; }
+  bool is_advanced_features_enabled() const { return this->advanced_features_enabled_; }
+
  protected:
   uint8_t last_id_ = 0;
   uint8_t next_id_();
@@ -111,6 +114,7 @@ class Duco : public uart::UARTDevice, public Component {
   bool removed_last_ = false;
 
   void debug_hex_(std::vector<uint8_t> bytes, uint8_t separator);
+  bool advanced_features_enabled_ = false;
 };
 
 class DucoDevice : public Parented<Duco> {
