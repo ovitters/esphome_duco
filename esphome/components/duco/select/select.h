@@ -126,6 +126,29 @@ class DucoHeaterMode : public DucoDevice, public PollingComponent, public select
 };
 
 
+class DucoPassiveCooling : public DucoDevice, public PollingComponent, public select::Select {
+ public:
+  static const std::string PASSIVE_COOLING_ON;
+  static const std::string PASSIVE_COOLING_OFF;
+
+  static const uint8_t PASSIVE_COOLING_CODE_ON;
+  static const uint8_t PASSIVE_COOLING_CODE_OFF;
+
+  void setup() override;
+  void update() override;
+
+  float get_setup_priority() const override;
+
+  void receive_response(const DucoMessage &message) override;
+
+  void control(const std::string &value) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+};
+
 
 }  // namespace duco
 }  // namespace esphome

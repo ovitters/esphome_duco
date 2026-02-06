@@ -11,6 +11,8 @@ CONF_MODE = "mode"
 CONF_BYPASS = "bypass"
 CONF_BYPASS_ADAPTIVE = "adaptive_bypass"
 CONF_HEATER="heater"
+CONF_PASSIVE_COOLING="passive_cooling"
+
 
 DUCO_MODE_OPTIONS = [
     "AUTO",
@@ -45,6 +47,10 @@ HEATER_OPTIONS = [
     "OFF",
 ]
 
+PASSIVE_COOLING_OPTIONS = [
+    "ON",
+    "OFF",
+]
 
 
 duco_ns = cg.esphome_ns.namespace("duco")
@@ -52,6 +58,7 @@ DucoSelect = duco_ns.class_("DucoSelect", cg.PollingComponent, select.Select)
 DucoBypassControl = duco_ns.class_("DucoBypassControl", cg.PollingComponent, select.Select)
 DucoBypassAdaptiveControl = duco_ns.class_("DucoBypassAdaptiveControl", cg.PollingComponent, select.Select)
 DucoHeaterMode = duco_ns.class_("DucoHeaterMode", cg.PollingComponent, select.Select)
+DucoPassiveCooling = duco_ns.class_("DucoPassiveCooling", cg.PollingComponent, select.Select)
 
 
 CONFIG_SCHEMA = cv.Schema(
@@ -103,6 +110,18 @@ CONFIG_SCHEMA = cv.Schema(
             .extend(cv.COMPONENT_SCHEMA)
             .extend(cv.polling_component_schema("3s"))
             .extend(DUCO_COMPONENT_SCHEMA)
+        ),
+        cv.Optional(CONF_PASSIVE_COOLING): cv.ensure_list(
+            select.select_schema(DucoPassiveCooling)
+            .extend(
+                {
+                    cv.GenerateID(): cv.declare_id(DucoPassiveCooling),
+                    cv.Optional(CONF_ADDRESS, default=1): cv.int_range(0, 68),
+                }
+            )
+            .extend(cv.COMPONENT_SCHEMA)
+            .extend(cv.polling_component_schema("3s"))
+            .extend(DUCO_COMPONENT_SCHEMA)
         )
 
 
@@ -141,5 +160,13 @@ async def to_code(config):
             var = cg.new_Pvariable(select_config[CONF_ID])
             await cg.register_component(var, select_config)
             await select.register_select(var, select_config, options=HEATER_OPTIONS)
+            cg.add(var.set_parent(parent))
+            cg.add(var.set_address(select_config[CONF_ADDRESS]))
+
+    if CONF_PASSIVE_COOLING in config:
+        for select_config in config[CONF_PASSIVE_COOLING]:
+            var = cg.new_Pvariable(select_config[CONF_ID])
+            await cg.register_component(var, select_config)
+            await select.register_select(var, select_config, options=PASSIVE_COOLING_OPTIONS)
             cg.add(var.set_parent(parent))
             cg.add(var.set_address(select_config[CONF_ADDRESS]))

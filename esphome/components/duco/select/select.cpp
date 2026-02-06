@@ -32,6 +32,9 @@ const std::string DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_OFF = "OFF";
 const std::string DucoHeaterMode::HEATER_ON  = "ON";
 const std::string DucoHeaterMode::HEATER_OFF  = "OFF";
 
+const std::string DucoPassiveCooling::PASSIVE_COOLING_ON = "ON";
+const std::string DucoPassiveCooling::PASSIVE_COOLING_OFF = "ON";
+
 const uint8_t DucoSelect::MODE_CODE_AUTO = 0x00;
 const uint8_t DucoSelect::MODE_CODE_MAN1 = 0x04;
 const uint8_t DucoSelect::MODE_CODE_MAN2 = 0x05;
@@ -56,6 +59,9 @@ const uint8_t DucoBypassAdaptiveControl::BYPASS_ADAPTIVE_CODE_OFF = 0x00;
 
 const uint8_t DucoHeaterMode::HEATER_CODE_ON = 0x01;
 const uint8_t DucoHeaterMode::HEATER_CODE_OFF = 0x00;
+
+const uint8_t DucoPassiveCooling::PASSIVE_COOLING_CODE_ON = 0x00;
+const uint8_t DucoPassiveCooling::PASSIVE_COOLING_CODE_OFF = 0x01;
 
 
 std::string code_to_string(uint8_t mode) {
@@ -211,6 +217,28 @@ uint8_t string_to_code_heater(const std::string &mode) {
   return DucoHeaterMode::HEATER_CODE_OFF;
 }
 
+
+std::string code_to_string_passive_cooling(uint8_t mode) {
+  switch (mode) {
+    case DucoPassiveCooling::PASSIVE_COOLING_CODE_ON:
+      return DucoPassiveCooling::PASSIVE_COOLING_ON;
+    case DucoPassiveCooling::PASSIVE_COOLING_CODE_OFF:
+      return DucoPassiveCooling::PASSIVE_COOLING_OFF;
+    default:
+      return DucoPassiveCooling::PASSIVE_COOLING_OFF;
+  }
+  return DucoPassiveCooling::PASSIVE_COOLING_OFF;
+}
+
+uint8_t string_to_code_passive_cooling(const std::string &mode) {
+  if (mode == DucoPassiveCooling::PASSIVE_COOLING_ON) {
+    return DucoPassiveCooling::PASSIVE_COOLING_CODE_ON;
+  }
+  if (mode == DucoPassiveCooling::PASSIVE_COOLING_OFF) {
+    return DucoPassiveCooling::PASSIVE_COOLING_CODE_OFF;
+  }
+  return DucoPassiveCooling::PASSIVE_COOLING_CODE_OFF;
+}
 
 
 void DucoSelect::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoSelect: SetAddress %i",address); this->address_ = address; }
@@ -398,6 +426,54 @@ void DucoHeaterMode::control(const std::string &value) {
   message.data = {address_,0x20, 0x0a, string_to_code_bypass_adaptive(value), 0x00, 0x00, 0x00};
   this->parent_->send(message, this);
 }
+
+void DucoPassiveCooling::set_address(uint8_t address) { ESP_LOGD(TAG, "PassiveCooling: SetAddress %i",address); this->address_ = address; }
+
+void DucoPassiveCooling::setup() {}
+
+void DucoPassiveCooling::update() {
+  DucoMessage message;
+  message.function = 0x24;
+  message.data = {0x00, 0x01, 0x03};
+  this->parent_->send(message, this);
+}
+
+float DucoPassiveCooling::get_setup_priority() const {
+  // After DUCO
+  return setup_priority::BUS - 2.0f;
+}
+
+
+void DucoPassiveCooling::receive_response(const DucoMessage &message) {
+  if (message.function == 0x26 && message.data[0] == 0x01 && message.data[1] == 0x01 && message.data[2] == 0x03) {
+    // mode response received, parse it
+    auto mode = code_to_string_bypass_adaptive(message.data[3]);
+
+    publish_state(mode);
+
+    ESP_LOGD(TAG, "DucoPassiveCooling: Current mode: %s", mode.c_str());
+
+    // do not wait for new messages with the same ID
+    this->parent_->stop_waiting(message.id);
+  }
+  if (message.function == 0x26 && message.data[0] == 0x01) {
+    this->parent_->stop_waiting(message.id);
+  }
+}
+
+void DucoPassiveCooling::control(const std::string &value) {
+  if (!this->parent_->is_advanced_features_enabled()) {
+    ESP_LOGW(TAG, "DucoPassiveCooling: Advanced features disabled, control rejected!");
+    // Publish the current state again to revert the GUI change
+    this->publish_state(this->state);
+    return;
+  }
+  DucoMessage message;
+  message.function = 0x24;
+  message.data = {address_,0x01, 0x03, string_to_code_bypass_adaptive(value), 0x00, 0x00, 0x00};
+  this->parent_->send(message, this);
+}
+
 
 }  // namespace duco
 }  // namespace esphome
