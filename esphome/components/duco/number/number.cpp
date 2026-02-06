@@ -88,7 +88,7 @@ void DucoPassiveCoolingTemperature::control(float number) {
 
 void DucoNightboostMax::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoPassiveCoolingTemperature: SetAddress %i",address); this->address_ = address; }
 
-void DucoNightboostMax::setup() {}
+//void DucoNightboostMax::setup() {}
 
 void DucoNightboostMax::update() {
   DucoMessage message;
@@ -127,6 +127,93 @@ void DucoNightboostMax::control(float number) {
   message.data = {0x00, 0x07, 0x03, percentage, 0x00, 0x00, 0x00};
   this->parent_->send(message, this);
 }
+
+
+void DucoBoxVentilationMin::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoPassiveCoolingTemperature: SetAddress %i",address); this->address_ = address; }
+
+//void DucoBoxVentilationMin::setup() {}
+
+void DucoBoxVentilationMin::update() {
+  DucoMessage message;
+  message.function = 0x18;
+  message.data = {0x00, 0x01, 0x00};
+  this->parent_->send(message, this);
+}
+
+float DucoBoxVentilationMin::get_setup_priority() const {
+  // After DUCO
+  return setup_priority::BUS - 2.0f;
+}
+
+void DucoBoxVentilationMin::receive_response(const DucoMessage &message) {
+  // the DUCO box responds with the same message, both for reading and setting the comfort temperature
+  if (message.function == 0x1A && message.data[3] == 0x05 && message.data[7] == 0x64) {
+    ESP_LOGD(TAG, "DucoBoxVentilationMin: data: %0X%0X%0X",message.data[1], message.data[2], message.data[3]);
+    // ignore invalid values below below 60, range is 0-60 for passive cooling
+    if (message.data[1] >= 10 && message.data[1] <= 100) {
+      publish_state(message.data[1]);
+    }
+    this->parent_->stop_waiting(message.id);
+  }
+}
+
+void DucoBoxVentilationMin::control(float number) {
+  if (!this->parent_->is_advanced_features_enabled()) {
+    ESP_LOGW(TAG, "DucoPassiveCoolingTemperature: Advanced features disabled, control rejected!");
+    // Publish the current state again to revert the GUI change
+    this->publish_state(this->state);
+    return;
+  }
+  uint8_t percentage = number;
+
+  DucoMessage message;
+  message.function = 0x18;
+  message.data = {0x01, 0x01, 0x00, 0x00, percentage};
+  this->parent_->send(message, this);
+}
+
+void DucoBoxVentilationMax::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoPassiveCoolingTemperature: SetAddress %i",address); this->address_ = address; }
+
+//void DucoBoxVentilationMax::setup() {}
+
+void DucoBoxVentilationMax::update() {
+  DucoMessage message;
+  message.function = 0x18;
+  message.data = {0x00, 0x01, 0x01};
+  this->parent_->send(message, this);
+}
+
+float DucoBoxVentilationMax::get_setup_priority() const {
+  // After DUCO
+  return setup_priority::BUS - 2.0f;
+}
+
+void DucoBoxVentilationMax::receive_response(const DucoMessage &message) {
+  // the DUCO box responds with the same message, both for reading and setting the comfort temperature
+  if (message.function == 0x1A && message.data[3] == 0x05 && message.data[7] == 0x64) {
+    // ignore invalid values below below 60, range is 0-60 for passive cooling
+    if (message.data[1] >= 10 && message.data[1] <= 100) {
+      publish_state(message.data[1]);
+    }
+    this->parent_->stop_waiting(message.id);
+  }
+}
+
+void DucoBoxVentilationMax::control(float number) {
+  if (!this->parent_->is_advanced_features_enabled()) {
+    ESP_LOGW(TAG, "DucoPassiveCoolingTemperature: Advanced features disabled, control rejected!");
+    // Publish the current state again to revert the GUI change
+    this->publish_state(this->state);
+    return;
+  }
+  uint8_t percentage = number;
+
+  DucoMessage message;
+  message.function = 0x18;
+  message.data = {0x01, 0x01, 0x01, 0x00, percentage};
+  this->parent_->send(message, this);
+}
+
 
 
 }  // namespace duco

@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 from esphome.components import number
 import esphome.config_validation as cv
-from esphome.const import CONF_ID, DEVICE_CLASS_TEMPERATURE, UNIT_CELSIUS, CONF_ADDRESS
+from esphome.const import CONF_ID, DEVICE_CLASS_TEMPERATURE, DEVICE_CLASS_EMPTY, UNIT_CELSIUS, UNIT_PERCENT, CONF_ADDRESS
 
 from .. import CONF_DUCO_ID, DUCO_COMPONENT_SCHEMA
 
@@ -14,18 +14,16 @@ CONF_FILTER_REMAINING = "filter_remaining"
 CONF_COMFORT_TEMPERATURE = "comfort_temperature"
 CONF_PASSIVE_COOLING = "passive_cooling"
 CONF_NIGHTBOOST_MAX = "nightboost_max"
+CONF_BOX_VENTILATION_MIN = "box_ventilation_min"
+CONF_BOX_VENTILATION_MAX = "box_ventilation_max"
 
 duco_ns = cg.esphome_ns.namespace("duco")
-DucoComfortTemperature = duco_ns.class_(
-    "DucoComfortTemperature", cg.PollingComponent, number.Number
-)
-DucoPassiveCooling = duco_ns.class_(
-    "DucoPassiveCoolingTemperature", cg.PollingComponent, number.Number
-)
+DucoComfortTemperature = duco_ns.class_("DucoComfortTemperature", cg.PollingComponent, number.Number)
+DucoPassiveCooling = duco_ns.class_("DucoPassiveCoolingTemperature", cg.PollingComponent, number.Number)
+DucoNightboostMax = duco_ns.class_("DucoNightboostMax", cg.PollingComponent, number.Number)
+DucoBoxVentilationMin = duco_ns.class_("DucoBoxVentilationMin", cg.PollingComponent, number.Number)
+DucoBoxVentilationMax = duco_ns.class_("DucoBoxVentilationMax", cg.PollingComponent, number.Number)
 
-DucoNightboostMax = duco_ns.class_(
-    "DucoNightboostMax", cg.PollingComponent, number.Number
-)
 
 
 CONFIG_SCHEMA = cv.Schema(
@@ -65,12 +63,44 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(CONF_NIGHTBOOST_MAX): cv.ensure_list(
             number.number_schema(
                 DucoNightboostMax,
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
+                unit_of_measurement=UNIT_PERCENT,
+                device_class=DEVICE_CLASS_EMPTY,
             )
             .extend(
                 {
                     cv.GenerateID(): cv.declare_id(DucoNightboostMax),
+                    cv.Optional(CONF_ADDRESS): cv.int_range(0, 68),
+                }
+            )
+            .extend(cv.COMPONENT_SCHEMA)
+            .extend(cv.polling_component_schema("60s"))
+            .extend(DUCO_COMPONENT_SCHEMA)
+        ),
+        cv.Optional(CONF_BOX_VENTILATION_MIN): cv.ensure_list(
+            number.number_schema(
+                DucoBoxVentilationMin,
+                unit_of_measurement=UNIT_PERCENT,
+                device_class=DEVICE_CLASS_EMPTY,
+            )
+            .extend(
+                {
+                    cv.GenerateID(): cv.declare_id(DucoBoxVentilationMin),
+                    cv.Optional(CONF_ADDRESS): cv.int_range(0, 68),
+                }
+            )
+            .extend(cv.COMPONENT_SCHEMA)
+            .extend(cv.polling_component_schema("60s"))
+            .extend(DUCO_COMPONENT_SCHEMA)
+        ),
+        cv.Optional(CONF_BOX_VENTILATION_MAX): cv.ensure_list(
+            number.number_schema(
+                DucoBoxVentilationMax,
+                unit_of_measurement=UNIT_PERCENT,
+                device_class=DEVICE_CLASS_EMPTY,
+            )
+            .extend(
+                {
+                    cv.GenerateID(): cv.declare_id(DucoBoxVentilationMax),
                     cv.Optional(CONF_ADDRESS): cv.int_range(0, 68),
                 }
             )
@@ -109,7 +139,26 @@ async def to_code(config):
         for nightboost_max_config in config[CONF_NIGHTBOOST_MAX]:
             var = cg.new_Pvariable(nightboost_max_config[CONF_ID])
             await cg.register_component(var, nightboost_max_config)
-            await number.register_number(var, nightboost_max_config, min_value=10, max_value=100, step=5)
+            await number.register_number(var, nightboost_max_config, min_value=10.0, max_value=100.0, step=5.0)
             cg.add(var.set_parent(parent))
             if CONF_ADDRESS in nightboost_max_config:
                 cg.add(var.set_address(nightboost_max_config[CONF_ADDRESS]))
+
+    if CONF_BOX_VENTILATION_MIN in config:
+        for box_ventilation_min_config in config[CONF_BOX_VENTILATION_MIN]:
+            var = cg.new_Pvariable(box_ventilation_min_config[CONF_ID])
+            await cg.register_component(var, box_ventilation_min_config)
+            await number.register_number(var, box_ventilation_min_config, min_value=10.0, max_value=100.0, step=5.0)
+            cg.add(var.set_parent(parent))
+            if CONF_ADDRESS in box_ventilation_min_config:
+                cg.add(var.set_address(box_ventilation_min_config[CONF_ADDRESS]))
+
+    if CONF_BOX_VENTILATION_MAX in config:
+        for box_ventilation_max_config in config[CONF_BOX_VENTILATION_MAX]:
+            var = cg.new_Pvariable(box_ventilation_max_config[CONF_ID])
+            await cg.register_component(var, box_ventilation_max_config)
+            await number.register_number(var, box_ventilation_max_config, min_value=10.0, max_value=100.0, step=5.0)
+            cg.add(var.set_parent(parent))
+            if CONF_ADDRESS in box_ventilation_max_config:
+                cg.add(var.set_address(box_ventilation_max_config[CONF_ADDRESS]))
+

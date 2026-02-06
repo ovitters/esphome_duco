@@ -44,7 +44,11 @@ class DucoPassiveCoolingTemperature : public DucoDevice, public PollingComponent
 
 class DucoNightboostMax : public DucoDevice, public PollingComponent, public number::Number {
  public:
-  void setup() override;
+  void setup() override {
+    this->traits.set_min_value(10.0f);
+    this->traits.set_max_value(100.0f);
+    this->traits.set_step(5.0f);
+  }
   void update() override;
 
   float get_setup_priority() const override;
@@ -58,6 +62,49 @@ class DucoNightboostMax : public DucoDevice, public PollingComponent, public num
  protected:
   uint8_t address_;
 };
+
+class DucoBoxVentilationMin : public DucoDevice, public PollingComponent, public number::Number {
+ public:
+  void setup() override {
+    this->traits.set_min_value(10.0f);
+    this->traits.set_max_value(100.0f);
+    this->traits.set_step(5.0f);
+  }
+  void update() override;
+
+  float get_setup_priority() const override;
+
+  void receive_response(const DucoMessage &message) override;
+
+  void control(float number) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+};
+
+class DucoBoxVentilationMax : public DucoDevice, public PollingComponent, public number::Number {
+ public:
+  void setup() override {
+    this->traits.set_min_value(10.0f);
+    this->traits.set_max_value(100.0f);
+    this->traits.set_step(5.0f);
+  }
+  void update() override;
+
+  float get_setup_priority() const override;
+
+  void receive_response(const DucoMessage &message) override;
+
+  void control(float number) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+};
+
 
 
 }  // namespace duco
