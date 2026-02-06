@@ -25,5 +25,23 @@ class DucoComfortTemperature : public DucoDevice, public PollingComponent, publi
   uint8_t address_;
 };
 
+class DucoPassiveCoolingTemperature : public DucoDevice, public PollingComponent, public number::Number {
+ public:
+  void setup() override;
+  void update() override;
+
+  float get_setup_priority() const override;
+
+  void receive_response(const DucoMessage &message) override;
+
+  void control(float number) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+};
+
+
 }  // namespace duco
 }  // namespace esphome
