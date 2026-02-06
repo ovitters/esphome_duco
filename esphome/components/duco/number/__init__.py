@@ -13,6 +13,7 @@ UNIT_DAYS = "days"
 CONF_FILTER_REMAINING = "filter_remaining"
 CONF_COMFORT_TEMPERATURE = "comfort_temperature"
 CONF_PASSIVE_COOLING = "passive_cooling"
+CONF_NIGHTBOOST_MAX = "nightboost_max"
 
 duco_ns = cg.esphome_ns.namespace("duco")
 DucoComfortTemperature = duco_ns.class_(
@@ -21,6 +22,11 @@ DucoComfortTemperature = duco_ns.class_(
 DucoPassiveCooling = duco_ns.class_(
     "DucoPassiveCoolingTemperature", cg.PollingComponent, number.Number
 )
+
+DucoNightboostMax = duco_ns.class_(
+    "DucoNightboostMax", cg.PollingComponent, number.Number
+)
+
 
 CONFIG_SCHEMA = cv.Schema(
     {
@@ -55,6 +61,22 @@ CONFIG_SCHEMA = cv.Schema(
             .extend(cv.COMPONENT_SCHEMA)
             .extend(cv.polling_component_schema("60s"))
             .extend(DUCO_COMPONENT_SCHEMA)
+        ),
+        cv.Optional(CONF_NIGHTBOOST_MAX): cv.ensure_list(
+            number.number_schema(
+                DucoNightboostMax,
+                unit_of_measurement=UNIT_CELSIUS,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+            )
+            .extend(
+                {
+                    cv.GenerateID(): cv.declare_id(DucoNightboostMax),
+                    cv.Optional(CONF_ADDRESS): cv.int_range(0, 68),
+                }
+            )
+            .extend(cv.COMPONENT_SCHEMA)
+            .extend(cv.polling_component_schema("60s"))
+            .extend(DUCO_COMPONENT_SCHEMA)
         )
     }
 ).extend(DUCO_COMPONENT_SCHEMA)
@@ -82,3 +104,12 @@ async def to_code(config):
             cg.add(var.set_parent(parent))
             if CONF_ADDRESS in passive_cooling_config:
                 cg.add(var.set_address(passive_cooling_config[CONF_ADDRESS]))
+
+    if CONF_NIGHTBOOST_MAX in config:
+        for nightboost_max_config in config[CONF_NIGHTBOOST_MAX]:
+            var = cg.new_Pvariable(nightboost_max_config[CONF_ID])
+            await cg.register_component(var, nightboost_max_config)
+            await number.register_number(var, nightboost_max_config, min_value=10, max_value=100, step=5)
+            cg.add(var.set_parent(parent))
+            if CONF_ADDRESS in nightboost_max_config:
+                cg.add(var.set_address(nightboost_max_config[CONF_ADDRESS]))
