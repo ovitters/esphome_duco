@@ -48,7 +48,60 @@ class DucoSelect : public DucoDevice, public PollingComponent, public select::Se
   void receive_response(const DucoMessage &message) override;
 
   void control(const std::string &value) override;
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
 };
+
+class DucoBypassControl : public DucoDevice, public PollingComponent, public select::Select {
+ public:
+  static const std::string BYPASS_OPEN;
+  static const std::string BYPASS_CLOSED;
+  static const std::string BYPASS_AUTO;
+
+  static const uint8_t BYPASS_CODE_OPEN;
+  static const uint8_t BYPASS_CODE_CLOSED;
+  static const uint8_t BYPASS_CODE_AUTO;
+
+  void setup() override;
+  void update() override;
+
+  float get_setup_priority() const override;
+
+  void receive_response(const DucoMessage &message) override;
+
+  void control(const std::string &value) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+};
+
+class DucoBypassAdaptiveControl : public DucoDevice, public PollingComponent, public select::Select {
+ public:
+  static const std::string BYPASS_ADAPTIVE_ON;
+  static const std::string BYPASS_ADAPTIVE_OFF;
+
+  static const uint8_t BYPASS_ADAPTIVE_CODE_ON;
+  static const uint8_t BYPASS_ADAPTIVE_CODE_OFF;
+
+  void setup() override;
+  void update() override;
+
+  float get_setup_priority() const override;
+
+  void receive_response(const DucoMessage &message) override;
+
+  void control(const std::string &value) override;
+
+  void set_address(uint8_t address);
+
+ protected:
+  uint8_t address_;
+};
+
 
 }  // namespace duco
 }  // namespace esphome
