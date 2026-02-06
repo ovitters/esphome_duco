@@ -233,6 +233,12 @@ void DucoBypassControl::set_address(uint8_t address) { ESP_LOGD(TAG, "DucoBypass
 void DucoBypassControl::setup() {}
 
 void DucoBypassControl::update() {
+  if (!this->parent_->is_advanced_features_enabled()) {
+    ESP_LOGW(TAG, "DucoBypassAdaptiveControl: Advanced features disabled, control rejected!");
+    // Publish the current state again to revert the GUI change
+    this->publish_state(this->state);
+    return;
+  }
   DucoMessage message;
   message.function = 0x24;
   message.data = {0x05, 0x00, 0x10, 0x0a};
@@ -273,6 +279,12 @@ void DucoBypassAdaptiveControl::set_address(uint8_t address) { ESP_LOGD(TAG, "Du
 void DucoBypassAdaptiveControl::setup() {}
 
 void DucoBypassAdaptiveControl::update() {
+  if (!this->parent_->is_advanced_features_enabled()) {
+    ESP_LOGW(TAG, "DucoBypassAdaptiveControl: Advanced features disabled, control rejected!");
+    // Publish the current state again to revert the GUI change
+    this->publish_state(this->state);
+    return;
+  }
   DucoMessage message;
   message.function = 0x24;
   message.data = {0x05, 0x00, 0x11, 0x0a};
