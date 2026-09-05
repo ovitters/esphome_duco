@@ -465,7 +465,7 @@ void DucoPassiveCooling::control(const std::string &value) {
   if (!this->parent_->is_advanced_features_enabled()) {
     ESP_LOGW(TAG, "DucoPassiveCooling: Advanced features disabled, control rejected!");
     // Publish the current state again to revert the GUI change
-    this->publish_state(StringRef(select->current_option()));
+    this->publish_state(StringRef(this->current_option()));
     return;
   }
   DucoMessage message;
