@@ -322,7 +322,7 @@ void DucoBypassControl::control(const std::string &value) {
   if (!this->parent_->is_advanced_features_enabled()) {
     ESP_LOGW(TAG, "DucoBypassAdaptiveControl: Advanced features disabled, control rejected!");
     // Publish the current state again to revert the GUI change
-    this->publish_state(this->state);
+    this->publish_state(StringRef(this->current_option()));
     return;
   }
   DucoMessage message;
@@ -371,7 +371,7 @@ void DucoBypassAdaptiveControl::control(const std::string &value) {
   if (!this->parent_->is_advanced_features_enabled()) {
     ESP_LOGW(TAG, "DucoBypassAdaptiveControl: Advanced features disabled, control rejected!");
     // Publish the current state again to revert the GUI change
-    this->publish_state(this->state);
+    this->publish_state(StringRef(this->current_option()));
     return;
   }
   DucoMessage message;
@@ -418,7 +418,7 @@ void DucoHeaterMode::control(const std::string &value) {
   if (!this->parent_->is_advanced_features_enabled()) {
     ESP_LOGW(TAG, "DucoHeaterMode: Advanced features disabled, control rejected!");
     // Publish the current state again to revert the GUI change
-    this->publish_state(this->state);
+    this->publish_state(StringRef(this->current_option()));
     return;
   }
   DucoMessage message;
@@ -465,7 +465,7 @@ void DucoPassiveCooling::control(const std::string &value) {
   if (!this->parent_->is_advanced_features_enabled()) {
     ESP_LOGW(TAG, "DucoPassiveCooling: Advanced features disabled, control rejected!");
     // Publish the current state again to revert the GUI change
-    this->publish_state(this->state);
+    this->publish_state(StringRef(select->current_option()));
     return;
   }
   DucoMessage message;
